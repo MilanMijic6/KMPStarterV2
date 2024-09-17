@@ -1,3 +1,4 @@
+import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -38,6 +39,10 @@ kotlin {
     }
     
     jvm("desktop")
+
+    task("testClasses").doLast {
+        println("This is a dummy testClasses task")
+    }
     
     listOf(
         iosX64(),
@@ -49,25 +54,69 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     sourceSets {
-        val desktopMain by getting
-        
-        androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":domain"))
+                implementation(project(":di"))
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.material)
+                implementation(compose.ui)
+                @OptIn(ExperimentalComposeLibrary::class)
+                implementation(compose.components.resources)
+                implementation(libs.moko.mvvm.compose)
+                implementation(libs.moko.mvvm.core)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+                implementation(libs.atomicfu)
+                implementation(libs.multiplatform.settings.noarg)
+                implementation(libs.voyager.navigator)
+                implementation(libs.voyager.screenmodel)
+                implementation(libs.voyager.bottom.sheet.navigation)
+                implementation(libs.voyager.transitions)
+                implementation(libs.voyager.tab.navigator)
+                implementation(libs.cafe.voyager.koin)
+                implementation(libs.core)
+                implementation(libs.kotlinx.datetime)
+            }
         }
-        commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
+
+        val androidMain by getting {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.compose.ui.tooling.preview)
+                implementation(libs.androidx.activity.compose)
+                implementation(libs.koin.android)
+                implementation(libs.core)
+                implementation(libs.accompanist.permissions)
+            }
         }
-        desktopMain.dependencies {
-            implementation(compose.desktop.currentOs)
+
+        val iosX64Main by getting
+        val iosArm64Main by getting
+        val iosSimulatorArm64Main by getting
+        val iosMain by creating {
+            dependsOn(commonMain)
+            iosX64Main.dependsOn(this)
+            iosArm64Main.dependsOn(this)
+            iosSimulatorArm64Main.dependsOn(this)
+            dependencies {
+                implementation(libs.koin.compose)
+                implementation(libs.koin.core)
+                implementation(libs.moko.mvvm.core)
+            }
         }
+
+        /*val desktopMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(compose.desktop.currentOs)
+            }
+        }*/
     }
 }
 
